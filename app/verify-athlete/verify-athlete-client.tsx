@@ -1,0 +1,112 @@
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+type Claim = {
+  athleteDisplayName?: string;
+  academyName?: string;
+  claimedBirthYear?: number;
+  claimedBelt?: string;
+  status?: string;
+};
+export default function VerifyAthleteClient() {
+  const [token, setToken] = useState(""),
+    [claim, setClaim] = useState<Claim>({}),
+    [notice, setNotice] = useState("");
+  useEffect(() => {
+    const value = new URLSearchParams(location.search).get("token") || "";
+    setToken(value);
+    fetch(`/api/athlete-verification/confirm?token=${encodeURIComponent(value)}`)
+      .then(async (r) => ({ ok: r.ok, data: await r.json() }))
+      .then((x) =>
+        x.ok ? setClaim(x.data) : setNotice(String(x.data.error || "Request unavailable.")),
+      )
+      .catch(() => setNotice("Request unavailable."));
+  }, []);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const raw = Object.fromEntries(new FormData(e.currentTarget)),
+      body = {
+        ...raw,
+        token,
+        membershipConfirmed: raw.membershipConfirmed === "on",
+        ageConfirmed: raw.ageConfirmed === "on",
+        beltConfirmed: raw.beltConfirmed === "on",
+      },
+      r = await fetch("/api/athlete-verification/confirm", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+      result = await r.json().catch(() => ({}));
+    setNotice(
+      r.ok
+        ? result.verified
+          ? "Athlete identity verified. Thank you for confirming all three attributes."
+          : "Response recorded. The claim was not verified because one or more attributes were not confirmed."
+        : String(result.error || "Response could not be recorded."),
+    );
+    if (r.ok) setClaim({ ...claim, status: String(result.status) });
+  }
+  return (
+    <main className="verify-shell">
+      <section>
+        <a className="register-emblem" href="/" aria-label="MatIQ home" />
+        <p>INDEPENDENT ATHLETE VERIFICATION</p>
+        <h1>Confirm an athlete record</h1>
+        <span>
+          Your response establishes provenance; it does not transfer ownership of the athlete&apos;s
+          profile.
+        </span>
+        {notice && (
+          <div className="register-notice" role="status">
+            {notice}
+          </div>
+        )}
+        {claim.athleteDisplayName && claim.status !== "verified" && claim.status !== "disputed" ? (
+          <form onSubmit={submit}>
+            <h2>{claim.athleteDisplayName}</h2>
+            <small>Claimed academy: {claim.academyName}</small>
+            <label>
+              <input type="checkbox" name="membershipConfirmed" /> Active membership confirmed
+            </label>
+            <label>
+              <input type="checkbox" name="ageConfirmed" /> Birth year / age record confirmed:{" "}
+              {claim.claimedBirthYear}
+            </label>
+            <label>
+              <input type="checkbox" name="beltConfirmed" /> Belt color confirmed:{" "}
+              {claim.claimedBelt}
+            </label>
+            <label>
+              Your name
+              <input name="verifierName" required />
+            </label>
+            <label>
+              Your academy role or title
+              <input
+                name="verifierTitle"
+                required
+                placeholder="Owner, head instructor, administrator"
+              />
+            </label>
+            <label>
+              Correction or note
+              <textarea name="note" />
+            </label>
+            <button>Submit academy confirmation</button>
+          </form>
+        ) : (
+          claim.status && (
+            <div className="verification-complete">
+              <b>{claim.status.toUpperCase()}</b>
+              <span>This request has reached a terminal status.</span>
+            </div>
+          )
+        )}
+        <footer>
+          Confirm only records you are authorized to validate. Responses are logged and expire after
+          one year.
+        </footer>
+      </section>
+    </main>
+  );
+}

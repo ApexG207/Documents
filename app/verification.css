@@ -1,0 +1,256 @@
+.profile-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f5f7f8;
+  border: 1px solid #dce2e5;
+  padding: 12px;
+}
+.profile-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(145deg, #541224, #111);
+  color: #c8a349;
+  display: grid;
+  place-items: center;
+  font:
+    700 18px Georgia,
+    serif;
+  flex: 0 0 auto;
+}
+.profile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.profile-photo-row b,
+.profile-photo-row small {
+  display: block;
+}
+.profile-photo-row small {
+  font-size: 8px;
+  color: #74808a;
+  margin-top: 5px;
+}
+.photo-upload {
+  border: 1px solid #ffffff24 !important;
+  background: #ffffff09 !important;
+  padding: 14px !important;
+  box-shadow: none !important;
+}
+.photo-upload label {
+  color: #fff !important;
+  margin: 0 0 10px !important;
+}
+.photo-upload input {
+  color: #ddd !important;
+  background: #111 !important;
+  border-color: #ffffff30 !important;
+}
+.photo-upload button {
+  width: 100%;
+  height: 38px;
+  border: 0;
+  background: #c8a349;
+  font-weight: 900;
+}
+.photo-upload small {
+  display: block;
+  color: #aaa;
+  margin-top: 7px;
+}
+.verification-panel {
+  max-width: 1180px;
+  margin: 18px auto 0;
+  background: #fff;
+  border: 1px solid #d7dde0;
+  border-top: 4px solid #c8a349;
+  padding: 30px;
+  display: grid;
+  grid-template-columns: 0.8fr 1fr;
+  gap: 26px;
+}
+.verification-panel > div > p {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #a77f27;
+  font-weight: 900;
+}
+.verification-panel h2 {
+  font:
+    500 26px Georgia,
+    serif;
+  margin: 7px 0;
+}
+.verification-panel > div > span {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #64717b;
+}
+.verification-panel form label {
+  display: block;
+  font-size: 9px;
+  font-weight: 800;
+  margin: 10px 0;
+}
+.verification-panel input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  border: 1px solid #cbd3d7;
+  padding: 10px;
+}
+.verification-panel button {
+  width: 100%;
+  height: 42px;
+  border: 0;
+  background: #541224;
+  color: #fff;
+  font-weight: 800;
+}
+.verification-panel form > small {
+  display: block;
+  font-size: 8px;
+  color: #7a858d;
+  margin-top: 8px;
+}
+.verification-ledger {
+  grid-column: 1/3;
+  border-top: 1px solid #e1e5e7;
+  padding-top: 12px;
+}
+.verification-ledger article {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf0f1;
+  font-size: 10px;
+}
+.verification-ledger em {
+  font-style: normal;
+  text-transform: uppercase;
+  font-size: 8px;
+  font-weight: 900;
+  color: #7a5d1a;
+}
+.verification-verified {
+  color: #176743 !important;
+}
+.verify-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  background: radial-gradient(circle at 80% 0, #c8a34930, transparent 30%),
+    linear-gradient(145deg, #260610, #090909);
+}
+.verify-shell > section {
+  width: min(680px, 100%);
+  background: #fff;
+  border-top: 5px solid #c8a349;
+  padding: 34px;
+  box-shadow: 0 25px 70px #0008;
+}
+.verify-shell > section > p {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: #a77f27;
+  font-weight: 900;
+}
+.verify-shell h1 {
+  font:
+    500 34px Georgia,
+    serif;
+  margin: 8px 0;
+}
+.verify-shell > section > span,
+.verify-shell footer {
+  font-size: 10px;
+  color: #69757e;
+}
+.verify-shell form {
+  margin-top: 24px;
+  border-top: 1px solid #dce1e3;
+  padding-top: 20px;
+}
+.verify-shell form h2 {
+  font:
+    500 24px Georgia,
+    serif;
+  margin: 0;
+}
+.verify-shell form > small {
+  display: block;
+  color: #6c7880;
+  margin: 5px 0 18px;
+}
+.verify-shell label {
+  display: block;
+  margin: 13px 0;
+  font-size: 10px;
+  font-weight: 800;
+}
+.verify-shell label input:not([type="checkbox"]),
+.verify-shell textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  border: 1px solid #cbd3d7;
+}
+.verify-shell label input[type="checkbox"] {
+  margin-right: 8px;
+}
+.verify-shell textarea {
+  min-height: 70px;
+}
+.verify-shell button {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  background: #541224;
+  color: #fff;
+  font-weight: 900;
+}
+.verify-shell footer {
+  display: block;
+  margin-top: 20px;
+  border-top: 1px solid #e1e4e5;
+  padding-top: 14px;
+}
+.verification-complete {
+  margin: 24px 0;
+  padding: 20px;
+  background: #f7f0de;
+}
+.verification-complete b,
+.verification-complete span {
+  display: block;
+}
+.verification-complete b {
+  color: #541224;
+}
+.verification-complete span {
+  font-size: 10px;
+  margin-top: 5px;
+}
+@media (max-width: 760px) {
+  .verification-panel {
+    grid-template-columns: 1fr;
+  }
+  .verification-ledger {
+    grid-column: 1;
+  }
+  .verification-ledger article {
+    grid-template-columns: 1fr;
+  }
+  .verify-shell {
+    padding: 14px;
+  }
+  .verify-shell > section {
+    padding: 24px;
+  }
+}
