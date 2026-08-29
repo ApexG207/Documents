@@ -1,0 +1,66 @@
+import { env } from "cloudflare:workers";
+import { NextRequest, NextResponse } from "next/server";
+import { identity } from "../../lib/access";
+import { safeText } from "../../lib/records";
+export async function GET(request: NextRequest) {
+  const email = identity(request);
+  if (!email) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  const [connections, bookings] = await env.DB.batch([
+    env.DB.prepare(
+      "SELECT c.id,c.target_academy_id AS academyId,p.display_name AS academyName,c.connection_type AS connectionType,c.message,c.status,c.created_at AS createdAt FROM academy_connections c LEFT JOIN academy_profiles p ON p.academy_id=c.target_academy_id WHERE c.requester_email=? ORDER BY c.created_at DESC LIMIT 100",
+    ).bind(email),
+    env.DB.prepare(
+      "SELECT b.id,b.academy_id AS academyId,p.display_name AS academyName,b.offering_type AS offeringType,b.start_at AS startAt,b.duration_minutes AS durationMinutes,b.party_size AS partySize,b.message,b.status,b.price_cents AS priceCents,b.currency FROM training_bookings b LEFT JOIN academy_profiles p ON p.academy_id=b.academy_id WHERE b.athlete_email=? ORDER BY b.start_at DESC LIMIT 100",
+    ).bind(email),
+  ]);
+  return NextResponse.json({ connections: connections.results, bookings: bookings.results });
+}
+export async function POST(request: NextRequest) {
+  const email = identity(request);
+  if (!email) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  const b = (await request.json()) as Record<string, unknown>,
+    kind = String(b.kind || ""),
+    academyId = safeText(b.academyId, 80),
+    now = Date.now();
+  if (!academyId) return NextResponse.json({ error: "academy_required" }, { status: 400 });
+  if (kind === "connection") {
+    const type = new Set(["coach_message", "cross_training", "membership_interest"]).has(
+        String(b.connectionType),
+      )
+        ? String(b.connectionType)
+        : "coach_message",
+      id = crypto.randomUUID();
+    await env.DB.prepare(
+      "INSERT INTO academy_connections (id,requester_academy_id,requester_email,target_academy_id,connection_type,message,status,created_at,updated_at) VALUES (?,NULL,?,?,?,?, 'requested',?,?)",
+    )
+      .bind(id, email, academyId, type, safeText(b.message, 1000) || null, now, now)
+      .run();
+    return NextResponse.json({ id, status: "requested" }, { status: 201 });
+  }
+  if (kind === "booking") {
+    const startAt = Date.parse(String(b.startAt || "")),
+      duration = Math.max(30, Math.min(240, Number(b.durationMinutes) || 60)),
+      party = Math.max(1, Math.min(20, Number(b.partySize) || 1));
+    if (!Number.isFinite(startAt) || startAt <= now)
+      return NextResponse.json({ error: "future_start_required" }, { status: 400 });
+    const id = crypto.randomUUID();
+    await env.DB.prepare(
+      "INSERT INTO training_bookings (id,academy_id,athlete_email,offering_type,start_at,duration_minutes,party_size,message,status,currency,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,'requested','usd',?,?)",
+    )
+      .bind(
+        id,
+        academyId,
+        email,
+        safeText(b.offeringType, 60) || "Cross-training",
+        startAt,
+        duration,
+        party,
+        safeText(b.message, 1000) || null,
+        now,
+        now,
+      )
+      .run();
+    return NextResponse.json({ id, status: "requested" }, { status: 201 });
+  }
+  return NextResponse.json({ error: "invalid_network_action" }, { status: 400 });
+}
