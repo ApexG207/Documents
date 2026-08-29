@@ -1,0 +1,65 @@
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+export default function GuardianConsentClient() {
+  const [token, setToken] = useState(""),
+    [ready, setReady] = useState(false),
+    [notice, setNotice] = useState("");
+  useEffect(() => {
+    const t = new URLSearchParams(location.search).get("token") || "";
+    setToken(t);
+    fetch(`/api/guardian-consent/confirm?token=${encodeURIComponent(t)}`)
+      .then((r) => {
+        setReady(r.ok);
+        if (!r.ok) setNotice("Consent request is invalid or expired.");
+      })
+      .catch(() => setNotice("Consent request unavailable."));
+  }, []);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const body = Object.fromEntries(new FormData(e.currentTarget)),
+      r = await fetch("/api/guardian-consent/confirm", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...body, token }),
+      }),
+      x = await r.json().catch(() => ({}));
+    setNotice(
+      r.ok ? `Guardian response recorded: ${x.status}.` : String(x.error || "Response failed."),
+    );
+    if (r.ok) setReady(false);
+  }
+  return (
+    <main className="verify-shell">
+      <section>
+        <a className="register-emblem" href="/" />
+        <p>GUARDIAN AUTHORIZATION</p>
+        <h1>Review athlete participation</h1>
+        <span>
+          Authorize profile participation, training records, competition media, and approved coach
+          sharing. Consent is revocable and expires annually.
+        </span>
+        {notice && <div className="register-notice">{notice}</div>}
+        {ready && (
+          <form onSubmit={submit}>
+            <label>
+              Guardian name
+              <input name="guardianName" required />
+            </label>
+            <label>
+              Relationship
+              <input name="relationship" required placeholder="Parent or legal guardian" />
+            </label>
+            <label>
+              Decision
+              <select name="decision">
+                <option value="grant">Grant consent</option>
+                <option value="decline">Decline consent</option>
+              </select>
+            </label>
+            <button>Record guardian decision</button>
+          </form>
+        )}
+      </section>
+    </main>
+  );
+}

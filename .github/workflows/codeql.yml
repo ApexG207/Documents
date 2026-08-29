@@ -1,0 +1,92 @@
+name: "CodeQL Evidence"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "32 21 * * 6"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: +security-extended
+
+      # Results are uploaded to code scanning so they raise alerts and can be
+      # required by branch protection. They were previously written to a
+      # throwaway artifact with `upload: never`, which meant no finding of any
+      # severity ever surfaced or blocked a merge.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: always
+          output: sarif-results
+
+      - name: Retain SARIF evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-${{ matrix.language }}-${{ github.sha }}
+          path: sarif-results
+          if-no-files-found: error
+          retention-days: 30
+
+      # Enforcement: any error-severity result fails the job. Without this the
+      # workflow reports success regardless of what the analysis found.
+      - name: Fail on error-severity findings
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          total=0
+          for file in sarif-results/*.sarif; do
+            count="$(node -e '
+              const sarif = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+              let n = 0;
+              for (const run of sarif.runs ?? []) {
+                const rules = new Map();
+                for (const rule of run.tool?.driver?.rules ?? []) rules.set(rule.id, rule);
+                for (const result of run.results ?? []) {
+                  const rule = rules.get(result.ruleId);
+                  const severity =
+                    result.level ??
+                    rule?.defaultConfiguration?.level ??
+                    "warning";
+                  if (severity === "error") n++;
+                }
+              }
+              console.log(n);
+            ' "$file")"
+            echo "$file: $count error-severity result(s)"
+            total=$((total + count))
+          done
+          echo "total error-severity results: $total"
+          if [ "$total" -gt 0 ]; then
+            echo "::error::CodeQL reported $total error-severity finding(s)"
+            exit 1
+          fi
