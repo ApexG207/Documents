@@ -1,0 +1,71 @@
+import { env } from "cloudflare:workers";
+import { NextRequest, NextResponse } from "next/server";
+import { identity } from "../../lib/access";
+import { safeText } from "../../lib/records";
+const allowed = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "text/csv"]);
+async function digest(bytes: ArrayBuffer) {
+  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)))
+    .map((x) => x.toString(16).padStart(2, "0"))
+    .join("");
+}
+export async function POST(request: NextRequest) {
+  const email = identity(request);
+  if (!email) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  const form = await request.formData(),
+    file = form.get("evidence"),
+    resultId = safeText(form.get("resultId"), 80),
+    evidenceType = safeText(form.get("evidenceType"), 50),
+    provider = safeText(form.get("sourceProvider"), 80);
+  if (!(file instanceof File) || !allowed.has(file.type))
+    return NextResponse.json(
+      { error: "supported_evidence_required", allowed: [...allowed] },
+      { status: 400 },
+    );
+  if (file.size > 10 * 1024 * 1024)
+    return NextResponse.json({ error: "evidence_too_large", maxMb: 10 }, { status: 413 });
+  const portfolio = await env.DB.prepare(
+    "SELECT id FROM competition_portfolios WHERE owner_email=? LIMIT 1",
+  )
+    .bind(email)
+    .first<{ id: string }>();
+  if (!portfolio) return NextResponse.json({ error: "portfolio_required" }, { status: 409 });
+  if (resultId) {
+    const result = await env.DB.prepare(
+      "SELECT id FROM competition_results WHERE id=? AND portfolio_id=?",
+    )
+      .bind(resultId, portfolio.id)
+      .first();
+    if (!result) return NextResponse.json({ error: "result_not_owned" }, { status: 403 });
+  }
+  const bytes = await file.arrayBuffer(),
+    hash = await digest(bytes),
+    id = crypto.randomUUID(),
+    now = Date.now(),
+    objectKey = `portfolio/${portfolio.id}/evidence/${id}`;
+  await env.BUCKET.put(objectKey, bytes, {
+    httpMetadata: { contentType: file.type },
+    customMetadata: { portfolioId: portfolio.id, resultId, evidenceType, sha256: hash },
+  });
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO competition_evidence (id,portfolio_id,result_id,object_key,file_name,content_type,byte_size,sha256,evidence_type,source_provider,status,uploaded_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?, 'submitted',?,?)",
+    ).bind(
+      id,
+      portfolio.id,
+      resultId || null,
+      objectKey,
+      file.name.slice(0, 180),
+      file.type,
+      file.size,
+      hash,
+      evidenceType || "result_document",
+      provider || null,
+      email,
+      now,
+    ),
+    env.DB.prepare(
+      "INSERT INTO record_verification_events (id,portfolio_id,result_id,event_type,outcome,reason,actor_email,created_at) VALUES (?,?,?,'evidence_uploaded','review_required',?,?,?)",
+    ).bind(crypto.randomUUID(), portfolio.id, resultId || null, `sha256:${hash}`, email, now),
+  ]);
+  return NextResponse.json({ id, status: "submitted", sha256: hash }, { status: 201 });
+}

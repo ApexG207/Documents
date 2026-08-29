@@ -1,0 +1,59 @@
+import { env } from "cloudflare:workers";
+import { NextRequest, NextResponse } from "next/server";
+import { identity, selectedAcademy } from "../../lib/access";
+import { activeAthleteExists, safeText } from "../../lib/records";
+export async function GET(r: NextRequest) {
+  const c = await selectedAcademy(r, "viewer");
+  if (!c) return NextResponse.json({ error: "academy_membership_required" }, { status: 403 });
+  const rows = await env.DB.prepare(
+    "SELECT id,athlete_id AS athleteId,session_type AS sessionType,session_date AS sessionDate,duration_minutes AS durationMinutes,intensity,focus,notes FROM training_sessions WHERE academy_id=? ORDER BY session_date DESC LIMIT 100",
+  )
+    .bind(c.academyId)
+    .all();
+  return NextResponse.json(rows.results);
+}
+export async function POST(r: NextRequest) {
+  const c = await selectedAcademy(r, "coach");
+  if (!c) return NextResponse.json({ error: "academy_coach_required" }, { status: 403 });
+  const b = (await r.json()) as Record<string, unknown>,
+    athleteId = safeText(b.athleteId, 80);
+  if (!(await activeAthleteExists(athleteId, c.academyId)))
+    return NextResponse.json({ error: "athlete_not_found" }, { status: 404 });
+  const parsed =
+      typeof b.sessionDate === "string" ? Date.parse(b.sessionDate) : Number(b.sessionDate),
+    date = Number.isFinite(parsed) ? parsed : Date.now(),
+    minutes = Math.min(300, Math.max(1, Number(b.durationMinutes || 60))),
+    intensity = Math.min(10, Math.max(1, Number(b.intensity || 5))),
+    id = crypto.randomUUID(),
+    now = Date.now();
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO training_sessions(id,academy_id,athlete_id,session_type,session_date,duration_minutes,intensity,focus,notes,created_by,created_at)VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+    ).bind(
+      id,
+      c.academyId,
+      athleteId,
+      safeText(b.sessionType, 30) || "class",
+      date,
+      minutes,
+      intensity,
+      safeText(b.focus, 100) || "General development",
+      safeText(b.notes, 1000),
+      identity(r),
+      now,
+    ),
+    env.DB.prepare(
+      "INSERT INTO product_events(id,academy_id,actor_email,event_name,object_type,object_id,properties_json,occurred_at)VALUES(?,?,?,?,?,?,?,?)",
+    ).bind(
+      crypto.randomUUID(),
+      c.academyId,
+      identity(r),
+      "training_logged",
+      "training_session",
+      id,
+      JSON.stringify({ minutes, intensity }),
+      now,
+    ),
+  ]);
+  return NextResponse.json({ id, academyId: c.academyId }, { status: 201 });
+}
