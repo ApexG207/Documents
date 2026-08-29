@@ -1,0 +1,17 @@
+# MatIQ repository ownership
+* @ApexG207
+
+# Governance, security, deployment, legal and data controls require owner review
+/.github/ @ApexG207
+/worker/ @ApexG207
+/app/api/ @ApexG207
+/db/ @ApexG207
+/drizzle/ @ApexG207
+/scripts/ @ApexG207
+/LICENSE.md @ApexG207
+/SECURITY.md @ApexG207
+/PRIVACY_POLICY.md @ApexG207
+/TERMS_OF_SERVICE.md @ApexG207
+/EULA.md @ApexG207
+/TRADEMARK_POLICY.md @ApexG207
+/CONTRIBUTOR_LICENSE_AGREEMENT.md @ApexG207

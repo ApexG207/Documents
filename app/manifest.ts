@@ -1,0 +1,36 @@
+import type { MetadataRoute } from "next";
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "matIQ Jiu-Jitsu Intelligence",
+    short_name: "matIQ",
+    description:
+      "Evidence-based training, competition analysis, academy connection, and athlete development.",
+    start_url: "/?source=installed",
+    display: "standalone",
+    background_color: "#0f0f0f",
+    theme_color: "#7a1026",
+    orientation: "any",
+    categories: ["sports", "health", "education", "productivity"],
+    icons: [
+      { src: "/matiq-emblem.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },
+    ],
+    shortcuts: [
+      {
+        name: "Training record",
+        url: "/?module=training",
+        icons: [{ src: "/matiq-emblem.png", sizes: "512x512" }],
+      },
+      {
+        name: "Competition portfolio",
+        url: "/portfolio",
+        icons: [{ src: "/matiq-emblem.png", sizes: "512x512" }],
+      },
+      {
+        name: "Academy network",
+        url: "/network",
+        icons: [{ src: "/matiq-emblem.png", sizes: "512x512" }],
+      },
+    ],
+  };
+}
