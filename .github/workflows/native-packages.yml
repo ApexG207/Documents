@@ -1,0 +1,62 @@
+name: Prepare Native Store Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Approved commercial version
+        required: true
+        type: string
+      target:
+        description: Package target
+        required: true
+        default: both
+        type: choice
+        options: [ios, windows, both]
+
+permissions:
+  contents: read
+
+jobs:
+  ios-source:
+    if: inputs.target == 'ios' || inputs.target == 'both'
+    runs-on: macos-latest
+    environment: app-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate iOS source controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "com.apexgovernance.matiq" store/ios/project.yml
+          grep -q "PrivacyInfo.xcprivacy" <(find store/ios -type f)
+          test -f store/ios/matIQ/SecurityGate.swift
+          ditto -c -k --keepParent store/ios "matIQ-ios-source-${{ inputs.version }}.zip"
+          shasum -a 256 "matIQ-ios-source-${{ inputs.version }}.zip" > "matIQ-ios-source-${{ inputs.version }}.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matIQ-ios-source-${{ inputs.version }}
+          path: |
+            matIQ-ios-source-${{ inputs.version }}.zip
+            matIQ-ios-source-${{ inputs.version }}.zip.sha256
+          retention-days: 90
+
+  windows-source:
+    if: inputs.target == 'windows' || inputs.target == 'both'
+    runs-on: windows-latest
+    environment: microsoft-store
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Windows source controls
+        shell: pwsh
+        run: |
+          if (-not (Select-String -Path store/windows/pwabuilder.json -Pattern "Apex Governance Group")) { exit 1 }
+          Compress-Archive -Path store/windows/* -DestinationPath "matIQ-windows-source-${{ inputs.version }}.zip"
+          (Get-FileHash "matIQ-windows-source-${{ inputs.version }}.zip" -Algorithm SHA256).Hash | Out-File "matIQ-windows-source-${{ inputs.version }}.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matIQ-windows-source-${{ inputs.version }}
+          path: |
+            matIQ-windows-source-${{ inputs.version }}.zip
+            matIQ-windows-source-${{ inputs.version }}.zip.sha256
+          retention-days: 90
