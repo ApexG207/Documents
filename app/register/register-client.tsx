@@ -1,0 +1,319 @@
+"use client";
+import { FormEvent, useEffect, useState } from "react";
+type Row = Record<string, string | number | boolean | null>;
+export default function RegisterClient() {
+  const [profile, setProfile] = useState<Row>({}),
+    [verifications, setVerifications] = useState<Row[]>([]),
+    [status, setStatus] = useState(""),
+    [saving, setSaving] = useState(false);
+  async function load() {
+    const [p, v] = await Promise.all([
+      fetch("/api/profile").then((r) => (r.ok ? r.json() : {})),
+      fetch("/api/athlete-verification").then((r) => (r.ok ? r.json() : { requests: [] })),
+    ]);
+    setProfile(p);
+    setVerifications(v.requests || []);
+  }
+  useEffect(() => {
+    void load();
+  }, []);
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    setStatus("");
+    const body = Object.fromEntries(new FormData(e.currentTarget)),
+      response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...body, bookingEnabled: body.bookingEnabled === "true" }),
+      }),
+      result = await response.json().catch(() => ({}));
+    if (response.ok) {
+      setStatus("Individual athlete registration active. No academy approval is required.");
+      setProfile({ ...profile, ...body, ...result });
+    } else
+      setStatus(
+        response.status === 401
+          ? "Sign in to create your individual athlete account."
+          : String(result.error || "Registration could not be completed."),
+      );
+    setSaving(false);
+  }
+  async function photo(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    const response = await fetch("/api/profile/photo", {
+        method: "PUT",
+        body: new FormData(e.currentTarget),
+      }),
+      result = await response.json().catch(() => ({}));
+    setStatus(
+      response.ok
+        ? "Profile picture secured."
+        : String(result.error || "Photo could not be uploaded."),
+    );
+    if (response.ok) {
+      e.currentTarget.reset();
+      void load();
+    }
+    setSaving(false);
+  }
+  async function verify(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaving(true);
+    const body = Object.fromEntries(new FormData(e.currentTarget)),
+      response = await fetch("/api/athlete-verification", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+      result = await response.json().catch(() => ({}));
+    setStatus(
+      String(result.message || result.error || "Verification request could not be created."),
+    );
+    if (response.ok) {
+      e.currentTarget.reset();
+      void load();
+    }
+    setSaving(false);
+  }
+  return (
+    <main className="register-shell">
+      <header>
+        <a className="register-emblem" href="/" aria-label="MatIQ home" />
+        <div>
+          <p>MATIQ INDIVIDUAL ATHLETE ACCESS</p>
+          <h1>Own your training journey.</h1>
+          <span>
+            Create an independent athlete identity now. Connect with an academy later—only if you
+            choose.
+          </span>
+        </div>
+        <a href="/">Return to MatIQ →</a>
+      </header>
+      <section className="register-assurance">
+        <article>
+          <b>Immediate activation</b>
+          <span>No academy approval or roster invitation required.</span>
+        </article>
+        <article>
+          <b>Athlete-controlled</b>
+          <span>You control visibility, goals, photo, and development information.</span>
+        </article>
+        <article>
+          <b>Optional verification</b>
+          <span>An academy can confirm membership, age, and belt without owning your account.</span>
+        </article>
+      </section>
+      {status && (
+        <div className="register-notice" role="status">
+          {status}
+        </div>
+      )}
+      <div className="register-grid">
+        <form onSubmit={submit}>
+          <p>INDIVIDUAL REGISTRATION</p>
+          <h2>
+            {profile.displayName ? "Update your athlete profile" : "Create your athlete profile"}
+          </h2>
+          <div className="profile-photo-row">
+            <div className="profile-photo">
+              {profile.avatarUrl ? (
+                <img src={String(profile.avatarUrl)} alt="Athlete profile" />
+              ) : (
+                <span>
+                  {String(profile.displayName || "MI")
+                    .slice(0, 2)
+                    .toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div>
+              <b>Profile picture</b>
+              <small>Upload after saving your profile. JPEG, PNG, or WebP; maximum 5 MB.</small>
+            </div>
+          </div>
+          <div className="register-pair">
+            <label>
+              Name or governed display name
+              <input
+                name="displayName"
+                required
+                minLength={2}
+                defaultValue={String(profile.displayName || "")}
+              />
+            </label>
+            <label>
+              Birth year
+              <input
+                name="birthYear"
+                type="number"
+                min="1920"
+                max={new Date().getFullYear()}
+                defaultValue={String(profile.birthYear || "")}
+              />
+            </label>
+          </div>
+          <div className="register-pair">
+            <label>
+              Current rank
+              <input
+                name="belt"
+                defaultValue={String(profile.belt || "")}
+                placeholder="White belt"
+              />
+            </label>
+            <label>
+              Location
+              <input
+                name="locationText"
+                defaultValue={String(profile.locationText || "")}
+                placeholder="City, State"
+              />
+            </label>
+          </div>
+          <label>
+            Primary goals
+            <textarea
+              name="goals"
+              defaultValue={String(profile.goals || "")}
+              placeholder="What are you training to achieve?"
+            />
+          </label>
+          <div className="register-pair">
+            <label>
+              Strengths
+              <textarea name="strengths" defaultValue={String(profile.strengths || "")} />
+            </label>
+            <label>
+              Development priorities
+              <textarea name="weaknesses" defaultValue={String(profile.weaknesses || "")} />
+            </label>
+          </div>
+          <label>
+            Concerns or constraints
+            <textarea name="concerns" defaultValue={String(profile.concerns || "")} />
+          </label>
+          <label>
+            Opportunities
+            <textarea name="opportunities" defaultValue={String(profile.opportunities || "")} />
+          </label>
+          <div className="register-pair">
+            <label>
+              Profile visibility
+              <select name="visibility" defaultValue={String(profile.visibility || "private")}>
+                <option value="private">Private</option>
+                <option value="connections">Approved connections</option>
+                <option value="public">Public discovery</option>
+              </select>
+            </label>
+            <label>
+              Academy booking
+              <select name="bookingEnabled" defaultValue={String(Boolean(profile.bookingEnabled))}>
+                <option value="false">Disabled</option>
+                <option value="true">Allow requests</option>
+              </select>
+            </label>
+          </div>
+          <button disabled={saving}>
+            {saving ? "Saving…" : "Activate individual athlete account"}
+          </button>
+          <small>
+            Saving creates an individual MatIQ profile. It does not make you an academy member or
+            give an academy control of your account.
+          </small>
+        </form>
+        <aside>
+          <p>ATHLETE IDENTITY</p>
+          <h2>Photo and verification controls</h2>
+          <form className="photo-upload" onSubmit={photo}>
+            <label>
+              Profile picture
+              <input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required />
+            </label>
+            <button disabled={saving || !profile.displayName}>Upload profile picture</button>
+            {!profile.displayName && <small>Save your profile first.</small>}
+          </form>
+          <ol>
+            <li>
+              <b>Register</b>
+              <span>Create your private athlete identity.</span>
+            </li>
+            <li>
+              <b>Present</b>
+              <span>Add an athlete-owned profile picture.</span>
+            </li>
+            <li>
+              <b>Verify</b>
+              <span>Request confirmation from an authorized academy contact.</span>
+            </li>
+            <li>
+              <b>Renew</b>
+              <span>Verification expires annually or when material details change.</span>
+            </li>
+          </ol>
+          <a href="/portfolio">Build competition portfolio →</a>
+          <a href="/network">Explore academy network →</a>
+        </aside>
+      </div>
+      <section className="verification-panel">
+        <div>
+          <p>VERIFIED ATHLETE</p>
+          <h2>Request academy confirmation</h2>
+          <span>
+            Verification confirms active membership, birth-year/age record, and belt color. The
+            academy validates the claim but does not control your profile or photo.
+          </span>
+        </div>
+        <form onSubmit={verify}>
+          <label>
+            Academy or gym name
+            <input name="academyName" required />
+          </label>
+          <label>
+            Academy owner or authorized contact email
+            <input name="verifierEmail" type="email" required />
+          </label>
+          <div className="register-pair">
+            <label>
+              Birth year
+              <input
+                name="claimedBirthYear"
+                type="number"
+                min="1920"
+                max={new Date().getFullYear()}
+                defaultValue={String(profile.birthYear || "")}
+                required
+              />
+            </label>
+            <label>
+              Belt color
+              <input name="claimedBelt" defaultValue={String(profile.belt || "")} required />
+            </label>
+          </div>
+          <button disabled={saving || !profile.displayName}>Send verification email</button>
+          {!profile.displayName && (
+            <small>Save your individual profile before requesting verification.</small>
+          )}
+        </form>
+        <div className="verification-ledger">
+          {verifications.length === 0 ? (
+            <span>No verification requests yet.</span>
+          ) : (
+            verifications.map((v) => (
+              <article key={String(v.id)}>
+                <b>{String(v.academyName)}</b>
+                <span>
+                  {String(v.claimedBelt)} · birth year {String(v.claimedBirthYear)}
+                </span>
+                <em className={`verification-${String(v.status)}`}>
+                  {String(v.status).replaceAll("_", " ")}
+                </em>
+              </article>
+            ))
+          )}
+        </div>
+      </section>
+    </main>
+  );
+}

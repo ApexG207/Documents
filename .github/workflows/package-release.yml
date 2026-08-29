@@ -1,0 +1,48 @@
+name: Package matIQ Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - run: npm run release:preflight
+      - name: Assemble governed package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat VERSION)"
+          release_name="matIQ_BJJ_App_v$version"
+          package_root="$RUNNER_TEMP/$release_name"
+          mkdir -p "$package_root"
+          git archive HEAD | tar -x -C "$package_root"
+          git rev-parse HEAD > "$package_root/RELEASE_COMMIT.txt"
+          git ls-files | LC_ALL=C sort > "$package_root/FILE_MANIFEST.txt"
+          npm run release:manifest -- "$package_root/RELEASE_MANIFEST.json"
+          cd "$RUNNER_TEMP"
+          zip -q -r "$GITHUB_WORKSPACE/$release_name.zip" "$release_name"
+          cd "$GITHUB_WORKSPACE"
+          sha256sum "$release_name.zip" > "$release_name.zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: matIQ-complete-governed-package
+          path: |
+            matIQ_BJJ_App_v*.zip
+            matIQ_BJJ_App_v*.zip.sha256
+          if-no-files-found: error
+          retention-days: 90

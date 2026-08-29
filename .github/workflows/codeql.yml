@@ -1,0 +1,99 @@
+name: "CodeQL Evidence"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: "32 21 * * 6"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: +security-extended
+
+      # `upload: never` because code scanning is not enabled for this repository.
+      # SARIF upload requires GitHub Advanced Security on a private repository, and
+      # the API rejects the upload without it. Enforcement is therefore done below,
+      # against the SARIF file, rather than by code scanning alerts.
+      #
+      # If Advanced Security is enabled later, switch this to `upload: always` and
+      # add `security-events: write` to the permissions block above; findings will
+      # then also surface in the Security tab and can be required by branch
+      # protection. Keep the gate step either way.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:${{ matrix.language }}"
+          upload: never
+          output: sarif-results
+
+      - name: Retain SARIF evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-${{ matrix.language }}-${{ github.sha }}
+          path: sarif-results
+          if-no-files-found: error
+          retention-days: 30
+
+      # Enforcement: any error-severity result fails the job. Previously the
+      # analysis reported success regardless of what it found, so no finding of
+      # any severity ever blocked a merge.
+      - name: Fail on error-severity findings
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(sarif-results/*.sarif)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no SARIF output was produced; cannot evaluate findings"
+            exit 1
+          fi
+          total=0
+          for file in "${files[@]}"; do
+            count="$(node -e '
+              const sarif = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+              let n = 0;
+              for (const run of sarif.runs ?? []) {
+                const rules = new Map();
+                for (const rule of run.tool?.driver?.rules ?? []) rules.set(rule.id, rule);
+                for (const result of run.results ?? []) {
+                  const rule = rules.get(result.ruleId);
+                  const severity = result.level ?? rule?.defaultConfiguration?.level ?? "warning";
+                  if (severity === "error") n++;
+                }
+              }
+              console.log(n);
+            ' "$file")"
+            echo "$file: $count error-severity result(s)"
+            total=$((total + count))
+          done
+          echo "total error-severity results: $total"
+          if [ "$total" -gt 0 ]; then
+            echo "::error::CodeQL reported $total error-severity finding(s)"
+            exit 1
+          fi
