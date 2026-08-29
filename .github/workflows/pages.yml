@@ -1,0 +1,53 @@
+name: Publish MatIQ Showcase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - github-pages/**
+      - public/matiq-emblem.png
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build sanitized showcase
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+        with:
+          enablement: true
+      - name: Assemble static artifact
+        run: |
+          mkdir -p _site
+          cp -R github-pages/. _site/
+          cp public/matiq-emblem.png _site/matiq-emblem.png
+          touch _site/.nojekyll
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Publish showcase
+        id: deployment
+        uses: actions/deploy-pages@v4
