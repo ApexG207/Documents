@@ -1,0 +1,7 @@
+CREATE TABLE `academy_claims` (`id` text PRIMARY KEY NOT NULL,`academy_id` text NOT NULL,`claimant_email` text NOT NULL,`claimant_name` text NOT NULL,`claimant_title` text NOT NULL,`evidence_type` text NOT NULL,`evidence_reference` text NOT NULL,`status` text DEFAULT 'submitted' NOT NULL,`risk_status` text DEFAULT 'review_required' NOT NULL,`reviewed_by` text,`reviewed_at` integer,`decision_note` text,`created_at` integer NOT NULL,`updated_at` integer NOT NULL);
+CREATE TABLE `membership_invitations` (`id` text PRIMARY KEY NOT NULL,`academy_id` text NOT NULL,`email` text NOT NULL,`role` text NOT NULL,`status` text DEFAULT 'pending' NOT NULL,`token_hash` text NOT NULL,`expires_at` integer NOT NULL,`invited_by` text NOT NULL,`accepted_at` integer,`created_at` integer NOT NULL);
+CREATE TABLE `academy_verification_events` (`id` text PRIMARY KEY NOT NULL,`academy_id` text NOT NULL,`claim_id` text,`event_type` text NOT NULL,`status` text NOT NULL,`evidence_hash` text,`actor_email` text NOT NULL,`note` text,`created_at` integer NOT NULL);
+CREATE UNIQUE INDEX `academy_claim_active_unique` ON `academy_claims` (`academy_id`,`claimant_email`,`status`);
+CREATE UNIQUE INDEX `membership_invite_pending_unique` ON `membership_invitations` (`academy_id`,`email`,`status`);
+CREATE INDEX `membership_email_status_idx` ON `memberships` (`email`,`status`,`academy_id`);
+CREATE INDEX `academy_claim_status_idx` ON `academy_claims` (`status`,`created_at`);
