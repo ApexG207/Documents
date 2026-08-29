@@ -1,0 +1,3 @@
+CREATE TABLE `guardian_consents` (`id` text PRIMARY KEY NOT NULL,`minor_email` text NOT NULL,`guardian_email` text NOT NULL,`guardian_name` text,`relationship` text,`scope_json` text DEFAULT '[]' NOT NULL,`status` text DEFAULT 'pending_delivery' NOT NULL,`token_hash` text NOT NULL,`token_expires_at` integer NOT NULL,`responded_at` integer,`expires_at` integer,`created_at` integer NOT NULL,`updated_at` integer NOT NULL);
+CREATE UNIQUE INDEX `guardian_consent_token_unique` ON `guardian_consents` (`token_hash`);
+CREATE INDEX `guardian_consent_minor_idx` ON `guardian_consents` (`minor_email`,`status`);

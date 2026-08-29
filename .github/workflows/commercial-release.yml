@@ -1,0 +1,83 @@
+name: Commercial Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact SemVer from VERSION
+        required: true
+        type: string
+      channel:
+        description: Release channel
+        required: true
+        default: beta
+        type: choice
+        options: [beta, production]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commercial-release-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - name: Match approved version
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat VERSION)" = "${{ inputs.version }}"
+          test "$(node -p "require('./package.json').version")" = "${{ inputs.version }}"
+      - run: npm run verify
+      - run: npm run release:manifest -- release/release-manifest.json
+      - name: Build governed source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="matIQ-v${{ inputs.version }}-${{ inputs.channel }}"
+          git archive --format=zip --output="$name.zip" HEAD
+          sha256sum "$name.zip" > "$name.zip.sha256"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: matIQ-v${{ inputs.version }}-${{ inputs.channel }}
+          path: |
+            matIQ-v${{ inputs.version }}-${{ inputs.channel }}.zip
+            matIQ-v${{ inputs.version }}-${{ inputs.channel }}.zip.sha256
+            release/release-manifest.json
+          retention-days: 90
+
+  publish-beta:
+    if: inputs.channel == 'beta'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create beta release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ inputs.version }}" --target "${{ github.sha }}" --prerelease --generate-notes --title "matIQ v${{ inputs.version }}"
+
+  publish-production:
+    if: inputs.channel == 'production'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create production release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ inputs.version }}" --target "${{ github.sha }}" --generate-notes --verify-tag --title "matIQ v${{ inputs.version }}"

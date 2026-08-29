@@ -1,0 +1,51 @@
+name: matIQ Quality Gate
+
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Build, lint, typecheck, security, and release controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Commercial release preflight
+        run: npm run release:preflight
+      - name: Audit production dependencies
+        run: npm run audit:prod
+      - name: Lint source
+        run: npm run lint
+      - name: Typecheck source
+        run: npm run typecheck
+      - name: Build and run release controls
+        run: npm test
+      - name: Generate evidence manifest
+        run: npm run release:manifest -- release/release-manifest.json
+      - name: Upload quality evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-evidence-${{ github.sha }}
+          path: release/release-manifest.json
+          retention-days: 30
