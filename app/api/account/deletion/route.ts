@@ -1,0 +1,77 @@
+import { env } from "cloudflare:workers";
+import { NextRequest, NextResponse } from "next/server";
+import { identity } from "../../../lib/access";
+const WAIT_DAYS = 7;
+export async function GET(request: NextRequest) {
+  const email = identity(request);
+  if (!email) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  const row = await env.DB.prepare(
+    "SELECT id,status,reason,scheduled_for AS scheduledFor,legal_hold AS legalHold,completed_at AS completedAt,created_at AS createdAt FROM account_deletion_requests WHERE user_email=? ORDER BY created_at DESC LIMIT 1",
+  )
+    .bind(email)
+    .first();
+  return NextResponse.json(row || { status: "none" }, { headers: { "cache-control": "no-store" } });
+}
+export async function POST(request: NextRequest) {
+  const email = identity(request);
+  if (!email) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  const body = (await request.json().catch(() => ({}))) as {
+    confirmation?: string;
+    reason?: string;
+  };
+  if (body.confirmation !== "DELETE")
+    return NextResponse.json({ error: "deletion_confirmation_required" }, { status: 400 });
+  const existing = await env.DB.prepare(
+    "SELECT id,status FROM account_deletion_requests WHERE user_email=? AND status IN ('scheduled','processing','held') LIMIT 1",
+  )
+    .bind(email)
+    .first();
+  if (existing) return NextResponse.json(existing, { status: 200 });
+  const legal = await env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM legal_holds h JOIN media_objects m ON m.id=h.media_id JOIN athletes a ON a.id=m.athlete_id JOIN memberships x ON x.academy_id=a.academy_id WHERE lower(x.email)=? AND h.status='active'",
+    )
+      .bind(email)
+      .first<{ total: number }>(),
+    now = Date.now(),
+    id = crypto.randomUUID(),
+    held = Number(legal?.total || 0) > 0,
+    status = held ? "held" : "scheduled",
+    scheduledFor = now + WAIT_DAYS * 86400000;
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO account_deletion_requests(id,user_email,status,reason,scheduled_for,legal_hold,created_at,updated_at)VALUES(?,?,?,?,?,?,?,?)",
+    ).bind(
+      id,
+      email,
+      status,
+      String(body.reason || "").slice(0, 500) || null,
+      scheduledFor,
+      held ? 1 : 0,
+      now,
+      now,
+    ),
+    env.DB.prepare(
+      "INSERT INTO audit_events(id,academy_id,actor_email,action,object_type,object_id,outcome,created_at)VALUES(?,?,?,?,?,?,?,?)",
+    ).bind(
+      crypto.randomUUID(),
+      "account",
+      email,
+      "request_deletion",
+      "user_account",
+      email,
+      status,
+      now,
+    ),
+  ]);
+  return NextResponse.json({ id, status, scheduledFor, legalHold: held }, { status: 201 });
+}
+export async function DELETE(request: NextRequest) {
+  const email = identity(request);
+  if (!email) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  await env.DB.prepare(
+    "UPDATE account_deletion_requests SET status='cancelled',updated_at=? WHERE user_email=? AND status='scheduled'",
+  )
+    .bind(Date.now(), email)
+    .run();
+  return NextResponse.json({ status: "cancelled" });
+}

@@ -1,0 +1,11 @@
+{
+  "name":"matIQ Jiu-Jitsu Intelligence",
+  "url":"https://matiq-youth-bjj.apex-governa-8920.chatgpt.site",
+  "packageId":"ApexGovernance.matIQ",
+  "publisher":"Apex Governance Group",
+  "version":"1.0.0.0",
+  "displayMode":"standalone",
+  "launchHandler":"navigate-existing",
+  "paymentProvider":"Stripe",
+  "minimumWindowsVersion":"10.0.19041.0"
+}
