@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "flags": {
+    "core_training": { "default": true, "risk": "low", "owner": "product" },
+    "competition_portfolio": { "default": true, "risk": "moderate", "owner": "product" },
+    "ai_video_analysis": { "default": false, "risk": "high", "owner": "ai-safety" },
+    "minor_media_upload": { "default": false, "risk": "critical", "owner": "safeguarding" },
+    "academy_payouts": { "default": false, "risk": "critical", "owner": "finance" },
+    "community_forum": { "default": false, "risk": "high", "owner": "trust-safety" },
+    "native_store_payments": { "default": false, "risk": "critical", "owner": "commerce" },
+    "automated_agent_actions": { "default": false, "risk": "critical", "owner": "ai-safety" }
+  }
+}
