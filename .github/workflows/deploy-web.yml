@@ -1,0 +1,76 @@
+name: Deploy Web Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ref:
+        description: Immutable tag or commit SHA
+        required: true
+        type: string
+      target:
+        description: Deployment environment
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-web-${{ inputs.target }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.target }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.release_ref }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22.13.0
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - name: Require governed deployment hook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.WEB_DEPLOY_HOOK_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOOK_URL"
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"
+
+      # A deployment is not complete until the deployed revision answers and
+      # reports operational. This step previously did nothing at all when
+      # WEB_HEALTHCHECK_URL was unset, so a deploy could report success without
+      # anything having been verified.
+      - name: Verify deployed revision
+        env:
+          HEALTHCHECK_URL: ${{ secrets.WEB_HEALTHCHECK_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${HEALTHCHECK_URL:-}" ]; then
+            echo "::error::WEB_HEALTHCHECK_URL is not configured for the ${{ inputs.target }} environment"
+            exit 1
+          fi
+          for attempt in 1 2 3 4 5 6; do
+            if body="$(curl --fail --silent --show-error --max-time 20 "$HEALTHCHECK_URL")"; then
+              echo "attempt $attempt: $body"
+              status="$(printf '%s' "$body" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).status)}catch{console.log("unparseable")}})')"
+              if [ "$status" = "operational" ]; then
+                echo "deployed revision is operational"
+                exit 0
+              fi
+              echo "health endpoint reported status=$status; retrying"
+            fi
+            sleep 10
+          done
+          echo "::error::deployed revision did not report operational health"
+          exit 1
