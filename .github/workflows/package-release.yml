@@ -1,0 +1,51 @@
+name: Package MatIQ Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/package-release.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build governed release archive
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact source state
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Assemble governed package
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_name="MatIQ_BJJ_App_v2.0.0-beta.1"
+          package_root="$RUNNER_TEMP/$release_name"
+          mkdir -p "$package_root"
+          git archive HEAD | tar -x -C "$package_root"
+          printf '%s\n' "$(git rev-parse HEAD)" > "$package_root/RELEASE_COMMIT.txt"
+          git ls-files | LC_ALL=C sort > "$package_root/FILE_MANIFEST.txt"
+          while IFS= read -r file; do
+            sha256sum "$file"
+          done < "$package_root/FILE_MANIFEST.txt" > "$package_root/SOURCE_SHA256.txt"
+          printf '%s\n' "MatIQ governed source and supporting-material package." "Hosted secrets, credentials, caches, database contents, user records, uploaded media, and generated build directories are excluded." > "$package_root/PACKAGE_SCOPE.txt"
+          cd "$RUNNER_TEMP"
+          zip -q -r "$GITHUB_WORKSPACE/$release_name.zip" "$release_name"
+          cd "$GITHUB_WORKSPACE"
+          sha256sum "$release_name.zip" > "$release_name.zip.sha256"
+      - name: Upload governed package
+        uses: actions/upload-artifact@v4
+        with:
+          name: MatIQ-complete-governed-package
+          path: |
+            MatIQ_BJJ_App_v2.0.0-beta.1.zip
+            MatIQ_BJJ_App_v2.0.0-beta.1.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+# Export trigger: 2026-08-25T11:07-05:00
