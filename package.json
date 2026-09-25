@@ -50,7 +50,7 @@
     "typescript": "5.9.3",
     "vinext": "0.0.50",
     "vite": "8.2.2",
-    "wrangler": "4.127.1"
+    "wrangler": "4.136.3"
   },
   "type": "module",
   "displayName": "MatIQ Jiu-Jitsu Intelligence Training Aid"
