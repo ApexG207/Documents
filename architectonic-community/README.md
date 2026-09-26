@@ -64,3 +64,8 @@ Support is voluntary sponsorship/support. It does **not** grant ownership, comme
 ## Contact
 
 For design-partner pilots, enterprise deployments, commercial licensing, or partnership inquiries, contact Apex Governance Group through its official business channels.
+
+
+## Legal Contact
+
+The Architectonic public-release licensing package has been formally approved by Apex Governance Group's in-house counsel. Questions or concerns regarding licensing, copyright, trademarks, enforcement, or other legal matters should be directed to **Akridge & Balch, P.C., Auburn, Alabama**, through the firm's official channels.
