@@ -134,6 +134,13 @@ Pilot participation does not automatically create enterprise, redistribution, or
 
 For commercial licensing, enterprise deployment, OEM, managed-service, or government/regulated licensing, contact Apex Governance Group through its official business channels.
 
-## Legal status
+## Legal status and counsel contact
 
-This framework is descriptive only. No rights are granted until a fully executed written agreement is in place.
+This framework has been approved for public release by Apex Governance Group's in-house counsel. No commercial rights are granted until a fully executed written agreement is in place.
+
+Questions, concerns, notices, licensing inquiries, or legal correspondence should be directed to:
+
+**Akridge & Balch, P.C.**  
+**Auburn, Alabama**
+
+Formal service addresses, counsel contacts, and matter-specific routing should be confirmed through the firm's official channels.
