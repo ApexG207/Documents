@@ -142,6 +142,13 @@ Commercial, enterprise, OEM, government, regulated-environment, managed-service,
 
 See `COMMERCIAL-LICENSE.md` for the commercial licensing framework.
 
-## 19. Legal review notice
+## 19. Legal status and counsel contact
 
-This public license is a business-controlled draft intended to establish a restrictive source-available evaluation posture. Apex Governance Group should have qualified counsel review the final license before relying on it for enforcement in a particular jurisdiction.
+This license has been formally approved for public release by Apex Governance Group's in-house counsel.
+
+Questions, concerns, notices, licensing inquiries, enforcement matters, or legal correspondence relating to this license or the Architectonic public release should be directed to:
+
+**Akridge & Balch, P.C.**  
+**Auburn, Alabama**
+
+Formal service addresses, counsel contacts, and matter-specific routing should be confirmed through the firm's official channels.
