@@ -37,6 +37,16 @@ The community preview exposes public schemas, synthetic examples, documentation,
 
 Architectonic is decision support. Generated analysis does not create authority, approve release, certify compliance, or replace accountable human judgment.
 
+## Licensing
+
+Architectonic Community Preview is **source-available, not open source**.
+
+- Evaluation and authorized noncommercial use: see `LICENSE.md`
+- Commercial / Enterprise / OEM / Government rights: see `COMMERCIAL-LICENSE.md`
+- Trademark and brand use: see `TRADEMARKS.md`
+
+Public access, forks, donations, sponsorships, or contributions do not grant commercial or production rights.
+
 ## Support Architectonic
 
 Support ongoing development, testing, documentation, security review, and public community tooling.
