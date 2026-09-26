@@ -37,6 +37,12 @@ The community preview exposes public schemas, synthetic examples, documentation,
 
 Architectonic is decision support. Generated analysis does not create authority, approve release, certify compliance, or replace accountable human judgment.
 
+## Copyright
+
+**Copyright © 2026 Apex Governance Group. All Rights Reserved.**
+
+Public availability does not place Architectonic materials in the public domain. See `COPYRIGHT.md`, `LICENSE.md`, and `TRADEMARKS.md` for governing rights and restrictions.
+
 ## Licensing
 
 Architectonic Community Preview is **source-available, not open source**.
