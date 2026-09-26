@@ -37,6 +37,14 @@ The community preview exposes public schemas, synthetic examples, documentation,
 
 Architectonic is decision support. Generated analysis does not create authority, approve release, certify compliance, or replace accountable human judgment.
 
+## Support Architectonic
+
+Support ongoing development, testing, documentation, security review, and public community tooling.
+
+**Cash App:** `$ApexGovGrp`
+
+Support is voluntary sponsorship/support. It does **not** grant ownership, commercial-use rights, production rights, sublicensing rights, certification, governance authority, or access to proprietary Architectonic Enterprise components. Commercial and enterprise use requires a separate written license from Apex Governance Group.
+
 ## Contact
 
-For design-partner pilots, enterprise deployments, or commercial inquiries, contact Apex Governance Group through its official business channels.
+For design-partner pilots, enterprise deployments, commercial licensing, or partnership inquiries, contact Apex Governance Group through its official business channels.
