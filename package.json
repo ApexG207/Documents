@@ -53,5 +53,8 @@
     "wrangler": "4.127.1"
   },
   "type": "module",
-  "displayName": "MatIQ Jiu-Jitsu Intelligence Training Aid"
+  "displayName": "MatIQ Jiu-Jitsu Intelligence Training Aid",
+  "overrides": {
+    "baseline-browser-mapping": "2.11.0"
+  }
 }
