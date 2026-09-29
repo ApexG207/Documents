@@ -4,7 +4,7 @@ import { PLATFORM_ACADEMY_ID } from "../../../lib/access";
 const authorized = (request: NextRequest) =>
   Boolean(
     env.MATIQ_AUTOMATION_KEY &&
-      request.headers.get("x-matiq-automation-key") === env.MATIQ_AUTOMATION_KEY,
+    request.headers.get("x-matiq-automation-key") === env.MATIQ_AUTOMATION_KEY,
   );
 const hash = async (value: string) =>
   Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))))

@@ -14,7 +14,8 @@
 }
 body {
   background-color: #e9e9e7;
-  background-image: linear-gradient(#ffffff55 1px, transparent 1px),
+  background-image:
+    linear-gradient(#ffffff55 1px, transparent 1px),
     linear-gradient(90deg, #ffffff55 1px, transparent 1px),
     radial-gradient(circle at 84% 4%, #c8a34910, transparent 32%);
   background-size:
@@ -315,7 +316,8 @@ body {
   box-shadow: inset 0 1px #fff4;
 }
 .ai-card {
-  background-image: radial-gradient(circle at 84% 10%, #c8a34928, transparent 25%),
+  background-image:
+    radial-gradient(circle at 84% 10%, #c8a34928, transparent 25%),
     linear-gradient(145deg, #731a32, #351019 52%, #080808);
   border-color: #7e5f28;
   box-shadow:
@@ -429,7 +431,8 @@ body {
 }
 .module-body aside {
   position: relative;
-  background: radial-gradient(circle at 90% 10%, #c8a34920, transparent 30%),
+  background:
+    radial-gradient(circle at 90% 10%, #c8a34920, transparent 30%),
     linear-gradient(145deg, #292929, #0a0a0a);
   box-shadow:
     inset 0 1px #ffffff20,
