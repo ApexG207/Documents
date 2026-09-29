@@ -8,7 +8,7 @@ export function GET() {
   const identity = Boolean((env as unknown as Record<string, unknown>).MATIQ_BOOTSTRAP_OWNER_EMAIL);
   const email = Boolean(
     (env as unknown as Record<string, unknown>).RESEND_API_KEY &&
-      (env as unknown as Record<string, unknown>).MATIQ_FROM_EMAIL,
+    (env as unknown as Record<string, unknown>).MATIQ_FROM_EMAIL,
   );
   const ai = Boolean(env.OPENAI_API_KEY);
   const billing = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_WEBHOOK_SECRET);

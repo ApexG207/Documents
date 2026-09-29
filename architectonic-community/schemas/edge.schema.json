@@ -2,12 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Architectonic Community Edge",
   "type": "object",
-  "required": [
-    "edge_id",
-    "source_id",
-    "target_id",
-    "relationship_type"
-  ],
+  "required": ["edge_id", "source_id", "target_id", "relationship_type"],
   "properties": {
     "edge_id": {
       "type": "string"
@@ -22,19 +17,10 @@
       "type": "string"
     },
     "evidence_state": {
-      "enum": [
-        "observed",
-        "derived",
-        "assumed",
-        "synthetic",
-        "unknown"
-      ]
+      "enum": ["observed", "derived", "assumed", "synthetic", "unknown"]
     },
     "confidence": {
-      "type": [
-        "number",
-        "null"
-      ],
+      "type": ["number", "null"],
       "minimum": 0,
       "maximum": 1
     }

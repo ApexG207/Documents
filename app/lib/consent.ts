@@ -13,9 +13,7 @@ export const CONSENT_DECLINED = "declined";
 export const CONSENT_REVOKED = "revoked";
 
 export type ConsentStatus =
-  | typeof CONSENT_GRANTED
-  | typeof CONSENT_DECLINED
-  | typeof CONSENT_REVOKED;
+  typeof CONSENT_GRANTED | typeof CONSENT_DECLINED | typeof CONSENT_REVOKED;
 
 /** Scopes that authorise retaining competition or training footage of a minor. */
 export const MEDIA_CONSENT_SCOPES = ["Internal match video", "Performance records"] as const;
