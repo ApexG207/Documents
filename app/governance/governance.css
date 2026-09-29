@@ -1,7 +1,8 @@
 .governance-shell {
   min-height: 100vh;
   padding: 42px clamp(20px, 6vw, 84px) 90px;
-  background: radial-gradient(circle at 80% 10%, #571426 0, transparent 27%),
+  background:
+    radial-gradient(circle at 80% 10%, #571426 0, transparent 27%),
     linear-gradient(145deg, #0d0b0c, #20171a 60%, #090909);
   color: #f7f4ef;
 }

@@ -144,7 +144,8 @@
   display: grid;
   place-items: center;
   padding: 30px;
-  background: radial-gradient(circle at 80% 0, #c8a34930, transparent 30%),
+  background:
+    radial-gradient(circle at 80% 0, #c8a34930, transparent 30%),
     linear-gradient(145deg, #260610, #090909);
 }
 .verify-shell > section {
